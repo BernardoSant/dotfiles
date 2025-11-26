@@ -1,5 +1,8 @@
 # .bash_aliases
 
+# --- Ajuda ---
+alias ajuda='cat ~/.bash_aliases'
+
 # --- Navegação e Listagem ---
 alias ll='ls -alF'
 alias la='ls -A'
