@@ -1,18 +1,19 @@
 #!/bin/bash
-# [Sudo] Script de Configuração de Ambiente Sênior (Zsh + Starship + Docker + VS Code)
+# [Sudo] Script de Configuração de Ambiente Sênior (Zsh + Starship + Docker + VS Code + XanMod + Alacritty)
 # Autor: Sudo (CTO, DevOps e Desenvolvimento Full-Stack)
-# Versão 5.0: Resiliência e Auto-Correção de Falhas
+# Versão 6.0: Performance (XanMod) e Minimalismo (Alacritty)
 
 # Cores e Variáveis
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 ZSH_CUSTOM=${ZSH_CUSTOM:-~/.oh-my-zsh/custom}
 ZSHRC_FILE="$HOME/.zshrc"
 
 echo -e "${GREEN}=====================================================${NC}"
-echo -e "${GREEN}🚀 INICIANDO SETUP DE AMBIENTE (AUTOMÁTICO V5.0 - RESILIENTE)${NC}"
+echo -e "${GREEN}🚀 INICIANDO SETUP DE AMBIENTE (SUDO V6.0 - PERFORMANCE)${NC}"
 echo -e "${GREEN}=====================================================${NC}"
 
 # --- FUNÇÕES DE INSTALAÇÃO ---
@@ -20,8 +21,66 @@ echo -e "${GREEN}=====================================================${NC}"
 install_base_tools() {
     echo -e "${GREEN}🔧 Atualizando sistema e instalando ferramentas base...${NC}"
     sudo apt update && sudo apt upgrade -y
-    sudo apt install zsh curl git just ca-certificates gnupg lsb-release wget -y
-    echo -e "${GREEN}✅ Ferramentas base (Zsh, Git, Curl, Just) instaladas.${NC}"
+    # Adicionado software-properties-common para gerenciar PPAs (necessário para Alacritty)
+    sudo apt install zsh curl git just ca-certificates gnupg lsb-release wget software-properties-common -y
+    echo -e "${GREEN}✅ Ferramentas base instaladas.${NC}"
+}
+
+install_xanmod_kernel() {
+    # Verificação de segurança: Não instalar Kernel em WSL ou Containers
+    if grep -q "WSL" /proc/version || [ -f /.dockerenv ]; then
+        echo -e "${YELLOW}⚠️ Ambiente virtualizado (WSL/Docker) detectado. Pulando instalação do Kernel XanMod.${NC}"
+        return
+    fi
+
+    if dpkg -l | grep -q linux-xanmod; then
+        echo "🏎️ Kernel XanMod já instalado. Pulando..."
+        return
+    fi
+
+    echo -e "${BLUE}🏎️ Preparando instalação do Kernel XanMod LTS (6.12+)...${NC}"
+    
+    # Registro da Chave GPG e Repositório
+    wget -qO - https://dl.xanmod.org/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/xanmod-archive-keyring.gpg --yes
+    echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | sudo tee /etc/apt/sources.list.d/xanmod-kernel.list
+    
+    sudo apt update
+    # Instala a versão LTS (Long Term Support) atual, que engloba a 6.12
+    sudo apt install linux-xanmod-lts -y
+    
+    echo -e "${GREEN}✅ Kernel XanMod LTS instalado. (Requer reboot para ativar).${NC}"
+}
+
+install_alacritty() {
+    if command -v alacritty &> /dev/null; then
+        echo "📺 Alacritty já está instalado. Pulando..."
+    else
+        echo -e "${BLUE}📺 Instalando Alacritty (Terminal Acelerado por GPU)...${NC}"
+        # Usando PPA para garantir versão mais recente que suporte TOML
+        sudo add-apt-repository ppa:aslatter/ppa -y
+        sudo apt update
+        sudo apt install alacritty -y
+        echo -e "${GREEN}✅ Alacritty instalado.${NC}"
+    fi
+
+    # Configuração do Alacritty (TOML)
+    echo -e "${BLUE}⚙️ Configurando Alacritty (decorations = None)...${NC}"
+    mkdir -p ~/.config/alacritty
+    
+    # Cria o arquivo alacritty.toml
+    cat << EOF > ~/.config/alacritty/alacritty.toml
+[window]
+decorations = "None"
+startup_mode = "Maximized"
+dynamic_title = true
+
+[font]
+size = 12.0
+
+[scrolling]
+history = 10000
+EOF
+    echo -e "${GREEN}✅ Configuração do Alacritty aplicada em ~/.config/alacritty/alacritty.toml${NC}"
 }
 
 install_docker_engine() {
@@ -39,26 +98,22 @@ install_docker_engine() {
       $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     
     sudo apt update
-    # Instala o Engine, CLI, ContainerD e Compose
     sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
 
-    # Otimização: Adicionar usuário ao grupo 'docker' (evitar sudo)
     sudo usermod -aG docker $USER
     echo -e "${GREEN}✅ Docker Engine instalado e usuário adicionado ao grupo 'docker'.${NC}"
 }
 
-# --- FUNÇÃO DE AUTO-CORREÇÃO DO DOCKER (NOVO) ---
 validate_and_fix_docker_cli() {
     echo -e "${GREEN}🔍 Validando a instalação do Docker CLI...${NC}"
     if ! command -v docker &> /dev/null; then
         echo -e "${RED}❌ O binário 'docker' não foi encontrado. Tentando reinstalação do CLI...${NC}"
-        # Tenta reinstalar apenas o CLI, que é o que geralmente falha.
         sudo apt install docker-ce-cli -y
         
         if command -v docker &> /dev/null; then
             echo -e "${GREEN}✅ Reinstalação bem-sucedida. Docker CLI disponível.${NC}"
         else
-            echo -e "${RED}🔥 ERRO: Falha ao instalar o Docker CLI. Verifique logs manualmente após o script.${NC}"
+            echo -e "${RED}🔥 ERRO: Falha ao instalar o Docker CLI. Verifique logs manualmente.${NC}"
         fi
     else
         echo -e "${GREEN}✅ Docker CLI encontrado em: $(which docker).${NC}"
@@ -72,7 +127,6 @@ install_vscode() {
     fi
 
     echo -e "${GREEN}💻 Instalando Visual Studio Code via repositório...${NC}"
-    
     wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
     sudo install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/
     sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
@@ -86,9 +140,7 @@ install_vscode() {
 install_oh_my_zsh() {
     if [ ! -d "$HOME/.oh-my-zsh" ]; then
         echo -e "${GREEN}🐚 Instalando Oh My Zsh...${NC}"
-        # Força a instalação não interativa
         sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-        # O script acima cria um novo .zshrc
     else
         echo "🐚 Oh My Zsh já está instalado. Pulando..."
     fi
@@ -120,67 +172,50 @@ configure_global_just() {
     
     cat << EOF > ~/.just_global
 # Comandos de Produtividade Global (Justfile)
-# Execute usando 'j <comando>' de qualquer lugar.
-
-# --- 1. Manutenção do Sistema e Atualização ---
 
 update-system:
     sudo apt update && sudo apt upgrade -y
 
-# Recarrega a configuração do Zsh/Starship sem reiniciar o terminal
 reload-shell:
     source ~/.zshrc
-
-# --- 2. Desenvolvimento e DevOps (Docker) ---
 
 clean-docker:
     docker container prune -f
     docker image prune -a -f
 
-# Corrige permissões comuns na home após uso de sudo em volumes Docker
 fix-perms:
     sudo chown -R \$USER:\$USER \$HOME
 
-# --- 3. Utilidades e Diagnóstico de Rede ---
-
-find-port *PORT:
-    sudo lsof -i :{{PORT}} -sTCP:LISTEN
-
-my-ip:
-    curl -s ifconfig.me
+# Checa qual Kernel está rodando
+check-kernel:
+    uname -r
 EOF
-    
-    echo -e "${GREEN}✅ ~/.just_global criado com comandos fundamentais.${NC}"
+    echo -e "${GREEN}✅ ~/.just_global criado.${NC}"
 }
 
 configure_zshrc() {
-    echo -e "${GREEN}📝 Configurando ~/.zshrc com plugins, Starship hook e alias Just...${NC}"
+    echo -e "${GREEN}📝 Configurando ~/.zshrc...${NC}"
     PLUGINS_CONFIG="plugins=(\ngit\ndocker\ndocker-compose\nzsh-autosuggestions\nzsh-syntax-highlighting\n)"
     
     cp $ZSHRC_FILE $ZSHRC_FILE.tmp
-    
-
     sed -i "/^plugins=(/c\\$PLUGINS_CONFIG" $ZSHRC_FILE.tmp
-    
 
     if ! grep -q 'eval "$(starship init zsh)"' $ZSHRC_FILE.tmp; then
         echo -e '\n# Inicialização do Starship Prompt' >> $ZSHRC_FILE.tmp
         echo 'eval "$(starship init zsh)"' >> $ZSHRC_FILE.tmp
     fi
-    
 
     if ! grep -q 'alias j=' $ZSHRC_FILE.tmp; then
         echo -e '\n# Alias para comandos globais do Just' >> $ZSHRC_FILE.tmp
         echo 'alias j="just -f ~/.just_global"' >> $ZSHRC_FILE.tmp
     fi
-    
 
     mv $ZSHRC_FILE.tmp $ZSHRC_FILE
     echo -e "${GREEN}✅ ~/.zshrc configurado.${NC}"
 }
 
 configure_starship_toml() {
-    echo -e "${GREEN}📝 Criando ~/.config/starship.toml (Configuração)...${NC}"
+    echo -e "${GREEN}📝 Criando ~/.config/starship.toml...${NC}"
     mkdir -p ~/.config
     
     cat << EOF > ~/.config/starship.toml
@@ -219,18 +254,14 @@ EOF
 }
 
 fix_zsh_permissions() {
-    # Garante que as permissões inseguras sejam corrigidas para evitar o aviso compinit
     echo -e "${GREEN}🛡️ Corrigindo permissões inseguras do Zsh...${NC}"
-    
-    # Usamos zsh -c para garantir que o 'compaudit' seja reconhecido
     zsh -c "compaudit 2>/dev/null | xargs sudo chmod g-w,o-w"
-    
-    echo -e "${GREEN}✅ Permissões do Zsh corrigidas. Aviso compinit prevenido.${NC}"
+    echo -e "${GREEN}✅ Permissões corrigidas.${NC}"
 }
 
 set_default_shell() {
     if [ "$SHELL" != "/usr/bin/zsh" ] && [ "$SHELL" != "/bin/zsh" ]; then
-        echo -e "${YELLOW}⚠️ MUDANÇA DE SHELL REQUER SENHA: Definindo Zsh como shell padrão...${NC}"
+        echo -e "${YELLOW}⚠️ MUDANÇA DE SHELL REQUER SENHA: Definindo Zsh como padrão...${NC}"
         chsh -s $(which zsh)
         echo -e "${GREEN}✅ Zsh definido como shell padrão.${NC}"
     fi
@@ -238,8 +269,10 @@ set_default_shell() {
 
 # --- EXECUÇÃO PRINCIPAL ---
 install_base_tools
+install_xanmod_kernel      # <<< NOVO: Instala Kernel 6.12+ (LTS)
+install_alacritty          # <<< NOVO: Instala e configura Alacritty
 install_docker_engine
-validate_and_fix_docker_cli # <<< AUTO-CORREÇÃO DO DOCKER
+validate_and_fix_docker_cli 
 install_vscode 
 install_oh_my_zsh
 install_starship
@@ -251,8 +284,8 @@ fix_zsh_permissions
 set_default_shell
 
 echo -e "\n${GREEN}=====================================================${NC}"
-echo -e "${GREEN}🎉 SETUP COMPLETO E RESILIENTE (V5.0)!${NC}"
-echo -e "1. ${RED}REINICIE O SISTEMA (sudo reboot)${NC} para que as permissões do Docker e o Zsh entrem em vigor."
-echo "2. Após o reboot, teste: ${YELLOW}docker ps${NC} e ${YELLOW}j update-system${NC}."
-echo "3. Seu terminal está seguro e autoconfigurado."
+echo -e "${GREEN}🎉 SETUP V6.0 COMPLETO: XANMOD + ALACRITTY INSTALADOS!${NC}"
+echo -e "1. ${RED}REINICIE O SISTEMA OBRIGATORIAMENTE (sudo reboot)${NC} para carregar o Kernel XanMod."
+echo "2. Abra o Alacritty após o reboot. Ele estará sem bordas (decorations = None)."
+echo "3. Verifique o kernel com: ${YELLOW}uname -r${NC} (deve mostrar 'xanmod')."
 echo -e "${GREEN}=====================================================${NC}\n"

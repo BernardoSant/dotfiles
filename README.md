@@ -66,3 +66,4 @@ Após reiniciar, abra o terminal e confirme se tudo funciona **sem `sudo`**:
 | **Shell/Prompt** | Abrir Terminal | O prompt **Starship** (`✅❯` ou `❌❯`) é exibido. |
 | **Docker** | `docker ps` | Exibe a lista de contêineres (sem `permission denied`). |
 | **Produtividade** | `j update-system` | O comando deve iniciar a atualização do `apt`. |
+
