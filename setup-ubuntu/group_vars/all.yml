@@ -1,0 +1,47 @@
+# group_vars/all.yml
+---
+system_user: "{{ ansible_user_id }}"
+
+# URLs diretas
+simplenote_url: "https://github.com/Automattic/simplenote-electron/releases/download/v2.21.0/Simplenote-linux-2.21.0-amd64.deb"
+
+# Listas de Pacotes APT
+common_packages:
+  - git
+  - curl
+  - wget
+  - build-essential
+  - zsh
+  - htop
+  - btop
+  - stacer
+  - software-properties-common
+
+dev_packages:
+  - clang
+  - llvm
+  - make
+  - python3-netifaces
+  - node-typescript
+
+desktop_packages:
+  - gnome-tweaks
+  - gnome-shell-extension-manager
+  - pavucontrol
+  - alacritty
+  - ulauncher
+  - google-chrome-stable
+
+# Extensões do VS Code (Sua lista do inventário)
+vscode_extensions:
+  - github.copilot
+  - github.copilot-chat
+  - google.geminicodeassist
+  - eamodio.gitlens
+  - esbenp.prettier-vscode
+  - ms-azuretools.vscode-docker
+  - ms-dotnettools.csharp
+  - bradlc.vscode-tailwindcss
+  - pkief.material-icon-theme
+  - codeium.codeium
+  - wallabyjs.console-ninja

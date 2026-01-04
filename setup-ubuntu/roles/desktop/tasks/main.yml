@@ -1,0 +1,31 @@
+---
+- name: Adicionar PPA do Ulauncher e Alacritty
+  apt_repository:
+    repo: "{{ item }}"
+    state: present
+  loop:
+    - ppa:agornostal/ulauncher
+    - ppa:aslatter/ppa
+
+- name: Adicionar Chave do Google Chrome
+  shell: |
+    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor | sudo tee /usr/share/keyrings/google-chrome.gpg > /dev/null
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+  args:
+    creates: /etc/apt/sources.list.d/google-chrome.list
+
+- name: Instalar Pacotes de Desktop
+  apt:
+    name: "{{ desktop_packages }}"
+    state: present
+    update_cache: yes
+
+- name: Baixar Simplenote
+  get_url:
+    url: "{{ simplenote_url }}"
+    dest: "/tmp/simplenote.deb"
+
+- name: Instalar Simplenote
+  apt:
+    deb: "/tmp/simplenote.deb"
+

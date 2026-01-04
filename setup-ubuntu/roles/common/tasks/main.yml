@@ -1,0 +1,15 @@
+---
+- name: Atualizar Cache do Apt
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Instalar Pacotes Essenciais
+  apt:
+    name: "{{ common_packages }}"
+    state: present
+
+- name: Configurar Zsh como Shell padrão
+  user:
+    name: "{{ system_user }}"
+    shell: /usr/bin/zsh

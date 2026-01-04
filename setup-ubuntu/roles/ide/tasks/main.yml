@@ -1,0 +1,20 @@
+---
+- name: Instalar Pacotes de Desenvolvimento
+  apt:
+    name: "{{ dev_packages }}"
+    state: present
+
+- name: Instalar Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present
+
+- name: Adicionar usuário ao grupo Docker
+  user:
+    name: "{{ system_user }}"
+    groups: docker
+    append: yes

@@ -1,0 +1,17 @@
+---
+- name: Setup Workstation Ubuntu Pro
+  hosts: local
+  become: true
+  
+  roles:
+    - role: common
+      tags: ['base']
+    
+    - role: desktop
+      tags: ['visual', 'gui']
+    
+    - role: dev
+      tags: ['docker', 'backend']
+    
+    - role: ide
+      tags: ['vscode', 'editor']
