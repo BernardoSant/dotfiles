@@ -1,17 +1,49 @@
 ---
-- name: Setup Workstation Ubuntu Pro
+- name: Setup Workstation Ubuntu Pro (Modo Trator 🚜)
   hosts: local
   become: true
-  
-  roles:
-    - role: common
-      tags: ['base']
-    
-    - role: desktop
-      tags: ['visual', 'gui']
-    
-    - role: dev
-      tags: ['docker', 'backend']
-    
-    - role: ide
-      tags: ['vscode', 'editor']
+
+  tasks:
+    # 1. Tenta rodar COMMON
+    - name: Executar Role COMMON
+      block:
+        - include_role:
+            name: common
+          tags: ['base']
+      rescue:
+        - debug:
+            msg: "❌ A role COMMON falhou, mas continuando para a próxima..."
+      ignore_errors: yes
+
+    # 2. Tenta rodar DESKTOP
+    - name: Executar Role DESKTOP
+      block:
+        - include_role:
+            name: desktop
+          tags: ['visual', 'gui']
+      rescue:
+        - debug:
+            msg: "❌ A role DESKTOP falhou, mas continuando para a próxima..."
+      ignore_errors: yes
+
+    # 3. Tenta rodar DEV
+    - name: Executar Role DEV
+      block:
+        - include_role:
+            name: dev
+          tags: ['docker', 'backend']
+      rescue:
+        - debug:
+            msg: "❌ A role DEV falhou, mas continuando para a próxima..."
+      ignore_errors: yes
+
+    # 4. Tenta rodar IDE
+    - name: Executar Role IDE
+      block:
+        - include_role:
+            name: ide
+          tags: ['vscode', 'editor']
+      rescue:
+        - debug:
+            msg: "❌ A role IDE falhou, mas continuando para a próxima..."
+      ignore_errors: yes
