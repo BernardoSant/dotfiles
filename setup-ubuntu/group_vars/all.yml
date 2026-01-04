@@ -24,15 +24,6 @@ dev_packages:
   - python3-netifaces
   - node-typescript
 
-desktop_packages:
-  - gnome-tweaks
-  - gnome-shell-extension-manager
-  - pavucontrol
-  - alacritty
-  - ulauncher
-  - google-chrome-stable
-
-# Extensões do VS Code (Sua lista do inventário)
 vscode_extensions:
   - github.copilot
   - github.copilot-chat
@@ -45,3 +36,11 @@ vscode_extensions:
   - pkief.material-icon-theme
   - codeium.codeium
   - wallabyjs.console-ninja
+
+desktop_packages:
+  - gnome-tweaks
+  - gnome-shell-extension-manager
+  - pavucontrol
+  - alacritty
+  - ulauncher
+  - google-chrome-stable

@@ -39,7 +39,7 @@ echo -e "${GREEN}🔥 Executando o Ansible Playbook...${NC}"
 echo "Você precisará digitar sua senha de SUDO para as tarefas de administrador."
 echo ""
 
-ansible-playbook -i inventory.ini site.yml --ask-become-pass
+ansible-playbook -i inventory.ini site.yml --ask-become-pass 
 
 echo -e "${GREEN}✅ Setup Finalizado com Sucesso!${NC}"
 echo "Recomendação: Reinicie o computador para aplicar todas as mudanças de Shell e Interface."

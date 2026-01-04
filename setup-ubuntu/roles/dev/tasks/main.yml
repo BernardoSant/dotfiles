@@ -1,12 +1,10 @@
 ---
-- name: Instalar Pacotes de Desenvolvimento e Dependências do Docker
+# -------------------------------------------
+# 1. Instalação de Dependências e Docker
+# -------------------------------------------
+- name: Instalar Pacotes de Desenvolvimento e Dependências
   apt:
-    name: 
-      - "{{ dev_packages }}"
-      - ca-certificates
-      - curl
-      - gnupg
-      - lsb-release
+    name: "{{ dev_packages + ['ca-certificates', 'curl', 'gnupg', 'lsb-release', 'apt-transport-https', 'wget'] }}"
     state: present
     update_cache: yes
 
@@ -21,7 +19,7 @@
     state: present
     filename: docker
 
-- name: Instalar Docker (Agora vai funcionar)
+- name: Instalar Docker Engine
   apt:
     name:
       - docker-ce
@@ -42,3 +40,34 @@
     name: "{{ system_user }}"
     groups: docker
     append: yes
+
+# -------------------------------------------
+# 2. Instalação do Visual Studio Code
+# -------------------------------------------
+- name: Adicionar Chave GPG da Microsoft (VS Code)
+  apt_key:
+    url: https://packages.microsoft.com/keys/microsoft.asc
+    state: present
+
+- name: Adicionar Repositório do VS Code
+  apt_repository:
+    repo: "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main"
+    state: present
+    filename: vscode
+
+- name: Instalar Visual Studio Code
+  apt:
+    name: code
+    state: present
+    update_cache: yes
+
+# -------------------------------------------
+# 3. Instalação das Extensões do VS Code
+# -------------------------------------------
+- name: Instalar Extensões do VS Code
+  become: yes
+  become_user: "{{ system_user }}"
+  shell: "code --install-extension {{ item }} --force"
+  loop: "{{ vscode_extensions }}"
+  register: ext_install
+  changed_when: "'already installed' not in ext_install.stdout"
