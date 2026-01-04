@@ -61,13 +61,3 @@
     state: present
     update_cache: yes
 
-# -------------------------------------------
-# 3. Instalação das Extensões do VS Code
-# -------------------------------------------
-- name: Instalar Extensões do VS Code
-  become: yes
-  become_user: "{{ system_user }}"
-  shell: "code --install-extension {{ item }} --force"
-  loop: "{{ vscode_extensions }}"
-  register: ext_install
-  changed_when: "'already installed' not in ext_install.stdout"
