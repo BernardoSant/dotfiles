@@ -1,10 +1,27 @@
 ---
-- name: Instalar Pacotes de Desenvolvimento
+- name: Instalar Pacotes de Desenvolvimento e Dependências do Docker
   apt:
-    name: "{{ dev_packages }}"
+    name: 
+      - "{{ dev_packages }}"
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: yes
+
+- name: Adicionar Chave GPG do Docker
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
     state: present
 
-- name: Instalar Docker
+- name: Adicionar Repositório Oficial do Docker
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+
+- name: Instalar Docker (Agora vai funcionar)
   apt:
     name:
       - docker-ce
@@ -12,6 +29,13 @@
       - containerd.io
       - docker-compose-plugin
     state: present
+    update_cache: yes 
+
+- name: Garantir que o serviço Docker esteja rodando
+  service:
+    name: docker
+    state: started
+    enabled: yes
 
 - name: Adicionar usuário ao grupo Docker
   user:
